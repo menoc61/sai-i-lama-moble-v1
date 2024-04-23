@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "auth-app",
-    "slug": "auth-app",
+    "name": "Sai i Lama Mobile",
+    "slug": "Sai i Lama Mobile",
     "version": "1.0.0",
-    "scheme": "auth-app",
+    "scheme": "Sai i Lama Mobile",
     "web": {
       "bundler": "metro",
       "output": "static",

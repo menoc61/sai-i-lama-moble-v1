@@ -13,16 +13,17 @@ import { Link } from 'expo-router';
 import Colors from '@/constants/Colors';
 
 const Login = () => {
-  const [email, setEmail] = useState('isaacout@gmail.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('hote1@gmail.com');
+  const [password, setPassword] = useState('hote1');
   const [loading, setLoading] = useState(false);
 
   const { onLogin } = useAuth();
 
   const login = async () => {
+    const result = await onLogin(email, password);
+    alert(result)
     setLoading(true);
 
-    const result = await onLogin!(email, password);
     if (result && result.error) {
       alert(result.msg);
     }

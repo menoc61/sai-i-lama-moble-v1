@@ -1,101 +1,88 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
-
-interface User {
-  name: string;
-  email: string;
-  // Add other user properties as needed
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (userData: User) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { createContext, useContext, useEffect, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-export const AuthProvider: React.FC = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    checkLoginStatus();
-  }, []);
-
-  const checkLoginStatus = async () => {
-    const token = await SecureStore.getItemAsync('token');
-    if (token) {
-      // If token exists, fetch user data
-      getUserData(token);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await axios.post<{ token: string }>(`${API_URL}/users/login`, { email, password });
-      const { token } = response.data;
-      await SecureStore.setItemAsync('token', token);
-      getUserData(token);
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
-  };
-
-  const signup = async (userData: User) => {
-    try {
-      const response = await axios.post<{ token: string }>(`${API_URL}/users/signup`, userData);
-      const { token } = response.data;
-      await SecureStore.setItemAsync('token', token);
-      getUserData(token);
-    } catch (error) {
-      console.error('Signup failed:', error);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await SecureStore.deleteItemAsync('token');
-      setUser(null);
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
-  const getUserData = async (token: string) => {
-    try {
-      const response = await axios.get<User>(`${API_URL}/users/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setUser(response.data);
-    } catch (error) {
-      console.error('Failed to fetch user data:', error);
-    }
-  };
-
-  const authContextValue: AuthContextType = {
-    user,
-    login,
-    signup,
-    logout,
-  };
-
-  return (
-    <AuthContext.Provider value={authContextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+type AuthProps = {
+  token: string | null;
+  initialized: boolean;
+  onRegister: (userData: User) => Promise<any>;
+  onLogin: (email: string, password: string) => Promise<any>;
+  onLogout: () => Promise<void>;
 };
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+type User = {
+  name: string;
+  email: string;
+  password: string;
+  phone: number;
+  gender: string;
+  birthday: string;
+  address: string;
+};
+
+const AuthContext = createContext<Partial<AuthProps>>({});
+
+export function useAuth(): AuthProps {
+  return useContext(AuthContext) as AuthProps;
+}
+
+export const AuthProvider = ({ children }: any) => {
+  const [token, setToken] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    const loadToken = async () => {
+      const storedToken = await SecureStore.getItemAsync('user-token');
+      if (storedToken) {
+        setToken(storedToken);
+      }
+      setInitialized(true);
+    };
+    loadToken();
+  }, []);
+
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      const response = await axios.post(`${API_URL}/users/login`, { email, password });
+      const newToken = response?.data?.token;
+      setToken(newToken);
+      await SecureStore.setItemAsync('user-token', newToken);
+      return response;
+    } catch (error: any) {
+      return { error: true, msg: error?.response?.data.message };
+    }
+  };
+
+  const handleRegister = async (userData: User) => {
+    try {
+      const response = await axios.post(`${API_URL}/users/register`, userData);
+      const newToken = response?.data?.token;
+      if (!newToken) {
+        throw new Error('Token not found in response');
+      }
+      setToken(newToken);
+      await SecureStore.setItemAsync('user-token', newToken);
+      return response;
+    } catch (error: any) {
+      console.error('Registration failed:', error);
+      return { error: true, msg: error.message };
+    }
+  };
+
+  const handleLogout = async () => {
+    setToken(null);
+    await SecureStore.deleteItemAsync('user-token');
+  };
+
+  const value = {
+    initialized,
+    onLogin: handleLogin,
+    onRegister: handleRegister,
+    onLogout: handleLogout,
+    token,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

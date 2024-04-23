@@ -3,9 +3,9 @@ import {
   Image,
   StyleSheet,
   TextInput,
-  ActivityIndicator,
   TouchableOpacity,
   Text,
+  ActivityIndicator,
 } from 'react-native';
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -13,22 +13,41 @@ import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-
+  const [name, setName] = useState('meno');
+  const [email, setEmail] = useState('gillemomeni@gmail.com');
+  const [password, setPassword] = useState('momeni@c61');
+  const [phone, setPhone] = useState('699691121');
+  const [gender, setGender] = useState('male');
+  const [birthday, setBirthday] = useState('15-12-2003');
+  const [address, setAddress] = useState('mimboman');
   const { onRegister } = useAuth();
   const router = useRouter();
 
-  const register = async () => {
-    setLoading(true);
-    const result = await onRegister!(email, password);
-    if (result && result.error) {
-      alert(result.msg);
-    } else {
-      router.push('/');
+  const handleRegister = async () => {
+    try {
+      if (!onRegister) {
+        throw new Error('onRegister function is not defined');
+      }
+
+      const userData = {
+        name: name,
+        email: email,
+        password: password,
+        phone: Number(phone),
+        gender: gender,
+        birthday: birthday,
+        address: address,
+      };
+
+      const result = await onRegister(userData);
+      if (result && result.error) {
+        alert(result.msg);
+      } else {
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Registration failed:', error);
     }
-    setLoading(false);
   };
 
   return (
@@ -40,34 +59,60 @@ const Login = () => {
 
       <TextInput
         autoCapitalize="none"
-        placeholder="john@doe.com"
+        placeholder="Name"
+        value={name}
+        onChangeText={setName}
+        style={styles.inputField}
+        placeholderTextColor={'#fff'}
+      />
+      <TextInput
+        autoCapitalize="none"
+        placeholder="Email"
         value={email}
         onChangeText={setEmail}
         style={styles.inputField}
         placeholderTextColor={'#fff'}
       />
       <TextInput
-        placeholder="password"
+        placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
         style={styles.inputField}
         placeholderTextColor={'#fff'}
       />
+      <TextInput
+        placeholder="Phone"
+        value={phone}
+        onChangeText={setPhone}
+        style={styles.inputField}
+        placeholderTextColor={'#fff'}
+      />
+      <TextInput
+        placeholder="Gender"
+        value={gender}
+        onChangeText={setGender}
+        style={styles.inputField}
+        placeholderTextColor={'#fff'}
+      />
+      <TextInput
+        placeholder="Birthday"
+        value={birthday}
+        onChangeText={setBirthday}
+        style={styles.inputField}
+        placeholderTextColor={'#fff'}
+      />
+      <TextInput
+        placeholder="Address"
+        value={address}
+        onChangeText={setAddress}
+        style={styles.inputField}
+        placeholderTextColor={'#fff'}
+      />
 
-      <TouchableOpacity onPress={register} style={styles.button}>
+      <TouchableOpacity onPress={handleRegister} style={styles.button}>
         <Text style={{ color: '#fff' }}>Sign up</Text>
       </TouchableOpacity>
-
-      {loading && (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1, justifyContent: 'center' },
-          ]}>
-          <ActivityIndicator color="#fff" size="large" />
-        </View>
-      )}
     </View>
   );
 };
@@ -83,18 +128,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 100,
     resizeMode: 'contain',
-  },
-  header: {
-    fontSize: 40,
-    textAlign: 'center',
-    marginBottom: 10,
-    color: '#fff',
-  },
-  subheader: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 40,
-    color: '#fff',
   },
   inputField: {
     marginVertical: 4,
@@ -112,15 +145,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     padding: 12,
     borderRadius: 4,
-  },
-  outlineButton: {
-    marginVertical: 8,
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    padding: 12,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: Colors.primary,
   },
 });
 
